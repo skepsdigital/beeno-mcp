@@ -4,21 +4,35 @@ MCP (Model Context Protocol) server para integração com a API do Beeno CRM. Pe
 
 ## Ferramentas Disponíveis
 
+### Modo Completo (Read/Write) - 47 tools
 | Módulo | Descrição |
 |--------|-----------|
 | **Contacts** | Criar, buscar, atualizar e listar contatos |
 | **Deals** | Gerenciar negociações e oportunidades |
 | **Companies** | Gerenciar empresas |
-| **Pipelines** | Consultar pipelines e estágios |
+| **Pipelines** | Consultar pipelines e estágios, criar novos |
 | **Products** | Gerenciar produtos |
 | **Notes** | Adicionar notas a contatos e deals |
 | **Tasks** | Criar e gerenciar tarefas |
 | **Associations** | Associar entidades (contatos, deals, empresas, produtos) |
-| **Properties** | Consultar propriedades customizadas |
-| **Segments** | Gerenciar segmentos |
+| **Properties** | Consultar e criar propriedades customizadas |
+| **Segments** | Gerenciar segmentos e adicionar contatos |
 | **Automation** | Disparar automações |
 | **Forms** | Gerenciar formulários |
 | **Communications** | Enviar mensagens (WhatsApp, etc.) |
+
+### Modo Somente Leitura (Read-Only) - 21 tools
+Quando `BEENO_READONLY=true`, apenas ferramentas de consulta estão disponíveis:
+- **Contacts**: list, read, search
+- **Deals**: list, read, search
+- **Companies**: list, read, search
+- **Pipelines**: list
+- **Products**: list, read, search
+- **Notes**: list
+- **Tasks**: list, read, search
+- **Properties**: list
+- **Segments**: list
+- **Forms**: list, read
 
 ## Pré-requisitos
 
@@ -58,13 +72,28 @@ cp .mcp.json.example .mcp.json
 ```jsonc
 "env": {
   "BEENO_DOMAIN": "https://app.beeno.ai/seu-tenant-id",  // URL da sua instância
-  "BEENO_API_KEY": "sua-api-key-aqui"                     // API Key gerada no Beeno
+  "BEENO_API_KEY": "sua-api-key-aqui",                   // API Key gerada no Beeno
+  "BEENO_READONLY": "false"                              // (opcional) Ativar modo somente leitura
 }
 ```
 
-**Passo 4** *(opcional)* — Se você utiliza o n8n, preencha também as credenciais dos servidores `n8n-brpx` e/ou `n8n-skeps` com a URL e API Key da sua instância n8n. Caso não use, você pode remover esses blocos do `.mcp.json`.
+### Modo Somente Leitura
 
-> **Importante:** O `.mcp.json` contém credenciais sensíveis e está no `.gitignore`. Nunca faça commit deste arquivo. Apenas o `.mcp.json.example` (sem credenciais) deve ser versionado.
+Por padrão, o servidor inicia em **modo somente leitura** (21 tools de consulta). Para ativar escrita, defina explicitamente:
+
+```jsonc
+"env": {
+  "BEENO_READONLY": "false"  // Libera ferramentas de write (create, update, delete)
+}
+```
+
+**Exemplos de configuração:**
+
+- **Somente leitura (padrão):** Não defina `BEENO_READONLY` ou deixe em branco
+- **Somente leitura (explícito):** `"BEENO_READONLY": "true"`
+- **Leitura + Escrita:** `"BEENO_READONLY": "false"`
+
+> **Importante:** O `.mcp.json` contém credenciais sensíveis e está no `.gitignore`. Nunca faça commit deste arquivo. Apenas os `.mcp.json.example*` (sem credenciais) devem ser versionados.
 
 ## Uso
 
@@ -102,7 +131,7 @@ Após configurar o MCP, basta pedir em linguagem natural na sua ferramenta de IA
 ```
 beeno-mcp/
 ├── src/
-│   ├── index.ts          # Entry point - registra tools e inicia servidor MCP
+│   ├── index.ts          # Entry point - registra tools, controla modo readonly
 │   ├── client.ts         # Cliente HTTP para a API do Beeno
 │   ├── schemas.ts        # Schemas Zod para validação
 │   ├── types.ts          # Tipos TypeScript
@@ -114,13 +143,31 @@ beeno-mcp/
 │       ├── products.ts
 │       ├── notes.ts
 │       ├── tasks.ts
-│       ├── associations.ts
+│       ├── associations.ts    (apenas modo write)
 │       ├── properties.ts
 │       ├── segments.ts
-│       ├── automation.ts
+│       ├── automation.ts       (apenas modo write)
 │       ├── forms.ts
-│       └── communications.ts
-├── .mcp.json.example     # Template de configuração MCP
+│       └── communications.ts   (apenas modo write)
+├── .mcp.json.example           # Template com ambas as configurações
+├── .mcp.json.example.read      # Template para modo somente leitura
+├── .mcp.json.example.readwrite # Template para modo read/write
 ├── package.json
 └── tsconfig.json
+```
+
+## Arquivos de Configuração
+
+- **`.mcp.json.example`**: Template com exemplo de ambas as configurações (read-only padrão + read/write)
+- **`.mcp.json.example.read`**: Configuração para modo somente leitura (21 tools)
+- **`.mcp.json.example.readwrite`**: Configuração para modo completo com escrita (47 tools)
+
+Copie o arquivo de exemplo que melhor se adapte ao seu caso:
+
+```bash
+# Para somente leitura (padrão seguro)
+cp .mcp.json.example.read .mcp.json
+
+# Para leitura + escrita
+cp .mcp.json.example.readwrite .mcp.json
 ```
