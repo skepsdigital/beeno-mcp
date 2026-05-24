@@ -2,4 +2,7 @@ node_modules/
 dist/
 *.tsbuildinfo
 .mcp.json
-.claude/
+
+# Python bytecode (gerado pelos scripts da skill beeno-crm)
+__pycache__/
+*.py[cod]
